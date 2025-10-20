@@ -1,0 +1,44 @@
+/* --- THÊM MỚI: DESKTOP RESPONSIVE --- */
+@media (min-width: 900px) {
+    /* 1. Thay đổi layout chính */
+    .app-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start; /* Căn lên trên */
+        gap: 24px;
+        padding: 20px;
+    }
+
+    /* 2. Style cho History Sidebar */
+    #history-overlay {
+        /* Ghi đè toàn bộ style 'fixed' của mobile */
+        position: static;
+        transform: none;
+        visibility: visible;
+        opacity: 1;
+        box-shadow: var(--shadow-calculator);
+
+        /* Kích thước mới */
+        flex-basis: 300px; /* Chiều rộng cố định */
+        flex-shrink: 0;
+        height: 600px; /* Chiều cao cố định (tùy chỉnh) */
+
+        /* Bo góc lại cho đẹp */
+        border-radius: 10px;
+    }
+
+    /* 3. Hiển thị lại tiêu đề h2 */
+    #history-overlay h2 {
+        display: block;
+        color: var(--text-overlay-header);
+        margin-top: 0;
+        border-bottom: 1px solid var(--border-button);
+        padding-bottom: 10px;
+    }
+
+    /* 4. Ẩn các nút không cần thiết trên desktop */
+    #history-toggle,
+    #backdrop-overlay {
+        display: none !important; /* Dùng !important để đảm bảo ẩn */
+    }
+}

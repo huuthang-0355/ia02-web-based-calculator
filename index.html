@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Calculator</title>
+
+        <link rel="stylesheet" href="./assets/css/style.css" />
+        <!-- <link rel="stylesheet" href="./assets/css/responsive.css" /> -->
+        <script src="./assets/js/script.js" defer></script>
+    </head>
+    <body>
+        <main class="app-container">
+            <div class="calculator">
+                <div class="grid-container">
+                    <div class="calculator-header">Calculator</div>
+                    <div class="toggle-container">
+                        <button id="theme-toggle">
+                            <img
+                                id="theme-icon"
+                                src="./assets/icons/moon.svg"
+                                alt="Theme"
+                            />
+                        </button>
+
+                        <button id="history-toggle">
+                            <img
+                                src="./assets/icons/history.svg"
+                                alt="History"
+                            />
+                        </button>
+                    </div>
+                    <div class="display">
+                        <div class="history-container">
+                            <button class="scroll-btn" id="scroll-left">
+                                &lt;
+                            </button>
+                            <div
+                                data-previous-operand
+                                class="previous-operand"
+                            ></div>
+                            <button class="scroll-btn" id="scroll-right">
+                                &gt;
+                            </button>
+                        </div>
+                        <div data-current-operand class="current-operand"></div>
+                    </div>
+                    <button data-operation>%</button>
+                    <button data-ce>CE</button>
+                    <button data-clear>C</button>
+                    <button data-backspace>⌫</button>
+                    <button data-operation>1/x</button>
+                    <button data-operation>x²</button>
+                    <button data-operation>√x</button>
+                    <button data-operation>÷</button>
+                    <button data-number>7</button>
+                    <button data-number>8</button>
+                    <button data-number>9</button>
+                    <button data-operation>×</button>
+                    <button data-number>4</button>
+                    <button data-number>5</button>
+                    <button data-number>6</button>
+                    <button data-operation>−</button>
+                    <button data-number>1</button>
+                    <button data-number>2</button>
+                    <button data-number>3</button>
+                    <button data-operation>+</button>
+                    <button data-negate>±</button>
+                    <button data-number>0</button>
+                    <button data-number>.</button>
+                    <button data-equals class="equals-btn">=</button>
+                </div>
+
+                <div id="backdrop-overlay"></div>
+
+                <div id="history-overlay-mobile"></div>
+            </div>
+            <div id="history-overlay-desktop"></div>
+        </main>
+    </body>
+</html>
