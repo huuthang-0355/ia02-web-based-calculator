@@ -1,4 +1,4 @@
-/* --- DESKTOP RESPONSIVE (Thay đổi lớn) --- */
+/* Desktop responsive */
 @media (min-width: 900px) {
     body {
         display: block;
@@ -29,16 +29,14 @@
         height: 100%;
     }
 
-    /* Ẩn các thứ của Mobile */
     #history-toggle,
     #backdrop-overlay,
     #history-overlay-mobile {
         display: none !important;
     }
 
-    /* Hiện History Desktop */
     #history-overlay-desktop {
-        display: block; /* Hiện nó lên */
+        display: block;
         position: static;
         transform: none;
         visibility: visible;
@@ -56,7 +54,6 @@
         overflow-y: auto;
     }
 
-    /* Style tiêu đề cho Desktop */
     #history-overlay-desktop h2 {
         display: block;
         color: var(--text-overlay-header);
@@ -65,24 +62,21 @@
         padding-bottom: 10px;
     }
 
-    /* 1. Tăng kích thước font cho "Calculator" */
     .calculator-header {
-        font-size: 2.5rem; /* Tăng từ 1rem */
+        font-size: 2.5rem;
         font-weight: 600;
-        height: auto; /* Bỏ chiều cao cố định */
-        padding-top: 10px; /* Thêm chút đệm */
+        height: auto;
+        padding-top: 10px;
     }
 
-    /* 2. Căn chỉnh lại container chứa các nút */
     .toggle-container {
         padding-top: 15px;
-        padding-bottom: 20px; /* Thêm khoảng cách trước khi tới display */
+        padding-bottom: 20px;
     }
 
-    /* 3. Tăng kích thước cho các icon (theme và history) */
     #theme-toggle img,
     #history-toggle img {
-        width: 32px; /* Tăng từ 24px */
+        width: 32px;
         height: 32px;
     }
 

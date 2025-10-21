@@ -128,7 +128,6 @@ class Calculator {
      * @param {string} operation Ký hiệu của phép toán (+, −, ×, ÷, √x, ...).
      */
     chooseOperation(operation) {
-        this.waitingForSecondOperand = false;
         if (this.isError) {
             this.clearEntry();
         }
@@ -146,12 +145,22 @@ class Calculator {
             return;
         }
 
+        // Corner Case: Cho phép thay đổi phép toán (vd: từ "9 +" thành "9 -").
+        // Nếu đang chờ toán hạng thứ 2 và người dùng nhấn một toán tử 2 ngôi khác
+        if (
+            this.waitingForSecondOperand &&
+            !["%", "1/x", "x²", "√x"].includes(operation)
+        ) {
+            this.operation = operation; // Chỉ thay đổi phép toán
+            this.updateDisplay();
+            return; // Dừng lại, không chạy code bên dưới
+        }
+
         this.readyForNewInput = false;
 
         // Xử lý các phép toán một ngôi (√x, x², etc.)
         if (["%", "1/x", "x²", "√x"].includes(operation)) {
             let baseString;
-            // Corner Case: Cho phép nối chuỗi các phép toán một ngôi (vd: √ (sqr(5))).
             if (this.operation === "UNARY_DISPLAY") {
                 baseString = this.previousOperand;
             } else {
@@ -182,14 +191,8 @@ class Calculator {
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
 
-        // Corner Case: Cho phép thay đổi phép toán (vd: từ "5 +" thành "5 -").
-        if (this.currentOperand === "" && this.previousOperand !== "") {
-            this.operation = operation;
-            this.updateDisplay();
-            return;
-        }
-
         // Corner Case: Thực hiện tính toán chuỗi (vd: "5 + 2 +").
+        // Logic này chỉ nên chạy khi KHÔNG chờ toán hạng thứ hai.
         if (this.previousOperand !== "") {
             this.compute();
         }
