@@ -1,57 +1,73 @@
+"use strict";
+
+/**
+ * Lớp Calculator quản lý toàn bộ logic và trạng thái của máy tính.
+ */
 class Calculator {
+    /**
+     * @param {HTMLElement} previousOperandTextElement Phần tử hiển thị phép tính trước đó.
+     * @param {HTMLElement} currentOperandTextElement Phần tử hiển thị số hiện tại.
+     * @param {HTMLElement} historyContainer Container cho thanh cuộn lịch sử (mobile).
+     * @param {HTMLElement} historyMobile Div chứa lịch sử trên mobile.
+     * @param {HTMLElement} historyDesktop Div chứa lịch sử trên desktop.
+     */
     constructor(
         previousOperandTextElement,
         currentOperandTextElement,
         historyContainer,
-        historyOverlay
+        historyMobile,
+        historyDesktop
     ) {
-        // THÊM historyOverlay
         this.previousOperandTextElement = previousOperandTextElement;
         this.currentOperandTextElement = currentOperandTextElement;
         this.historyContainer = historyContainer;
-        this.historyMobile = historyOverlayMobile; // <-- Sửa
-        this.historyDesktop = historyOverlayDesktop; // <-- Sửa
+        this.historyMobile = historyMobile;
+        this.historyDesktop = historyDesktop;
         this.isError = false;
         this.readyForNewInput = false;
         this.waitingForSecondOperand = false;
         this.clear();
     }
 
-    // Xóa toàn bộ tính toán
+    /**
+     * Reset toàn bộ trạng thái máy tính về giá trị mặc định.
+     */
     clear() {
         this.currentOperand = "0";
         this.previousOperand = "";
         this.operation = undefined;
         this.readyForNewInput = false;
-        this.isError = false; // THÊM MỚI
+        this.isError = false;
         this.waitingForSecondOperand = false;
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
         this.updateDisplay();
     }
 
-    // Xóa mục nhập hiện tại
+    /**
+     * Chỉ reset ô nhập liệu hiện tại về 0.
+     */
     clearEntry() {
         this.currentOperand = "0";
         this.readyForNewInput = false;
-        this.isError = false; // THÊM MỚI
+        this.isError = false;
         this.waitingForSecondOperand = false;
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
         this.updateDisplay();
     }
 
-    // Xóa ký tự cuối cùng
+    /**
+     * Xóa ký tự cuối cùng của ô nhập liệu hiện tại.
+     * Nếu đang có lỗi, hàm này sẽ xóa toàn bộ lỗi.
+     */
     backspace() {
-        this.waitingForSecondOperand = false;
-        // --- THAY ĐỔI CHÍNH ---
-        // Nếu đang có lỗi, Backspace sẽ xóa lỗi đó
+        // Corner Case: Nếu màn hình đang hiển thị lỗi, backspace sẽ hoạt động như CE.
         if (this.isError) {
             this.clearEntry();
             return;
         }
-        // --- KẾT THÚC THAY ĐỔI ---
-
+        this.waitingForSecondOperand = false;
         this.readyForNewInput = false;
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
@@ -62,19 +78,19 @@ class Calculator {
         }
     }
 
-    // THAY THẾ TOÀN BỘ HÀM NÀY
+    /**
+     * Nối một số hoặc dấu chấm vào ô nhập liệu hiện tại.
+     * @param {string} number Ký tự số (0-9) hoặc dấu chấm (.).
+     */
     appendNumber(number) {
+        // Corner Case: Nếu đang có lỗi, nhấn số mới sẽ xóa lỗi và bắt đầu nhập số mới.
         if (this.isError) {
             this.clearEntry();
         }
-
-        // --- BẮT ĐẦU SỬA LỖI ---
-
-        // 1. Kiểm tra dấu chấm NGAY LẬP TỨC.
-        //    Logic này áp dụng cho mọi trạng thái.
+        // Corner Case: Ngăn người dùng nhập nhiều hơn một dấu chấm.
         if (number === "." && this.currentOperand.includes(".")) return;
 
-        // 2. Xử lý khi đang chờ số thứ 2 (vd: 5 + [nhấn .])
+        // Corner Case: Sau khi nhập "5 +", nhấn số "2" sẽ thay thế số "5" ở dòng dưới.
         if (this.waitingForSecondOperand) {
             if (number === ".") {
                 this.currentOperand = "0.";
@@ -82,8 +98,7 @@ class Calculator {
                 this.currentOperand = number.toString();
             }
             this.waitingForSecondOperand = false;
-
-            // 3. Xử lý khi vừa nhấn '=' (sẵn sàng cho số mới)
+            // Corner Case: Sau khi nhấn "=", nhấn số mới sẽ bắt đầu một phép tính mới.
         } else if (this.readyForNewInput) {
             this.previousOperand = "";
             this.operation = undefined;
@@ -93,32 +108,32 @@ class Calculator {
                 this.currentOperand = number.toString();
             }
             this.readyForNewInput = false;
-
-            // 4. Xử lý nối số bình thường
+            // Luồng hoạt động bình thường: nối số vào chuỗi hiện tại.
         } else {
+            // Corner Case: Xóa số 0 mặc định ở đầu.
             if (this.currentOperand === "0" && number !== ".") {
                 this.currentOperand = number.toString();
             } else {
-                // Kiểm tra dấu chấm đã được dời lên đầu hàm
                 this.currentOperand =
                     this.currentOperand.toString() + number.toString();
             }
         }
-        // --- KẾT THÚC SỬA LỖI ---
-
-        // Reset các stack này sau khi nhập số (logic cũ)
+        // Reset bộ nhớ toán tử một ngôi mỗi khi nhập số mới.
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
     }
 
-    // Chọn một phép toán
+    /**
+     * Chọn một phép toán để thực hiện.
+     * @param {string} operation Ký hiệu của phép toán (+, −, ×, ÷, √x, ...).
+     */
     chooseOperation(operation) {
-        this.waitingForSecondOperand = false; // Reset cờ
+        this.waitingForSecondOperand = false;
         if (this.isError) {
             this.clearEntry();
         }
 
-        // Xử lý '7, =, +'
+        // Corner Case: Sau khi có kết quả (vd: 7), nhấn "+" sẽ bắt đầu phép tính "7 +".
         if (
             this.readyForNewInput &&
             !["%", "1/x", "x²", "√x"].includes(operation)
@@ -126,17 +141,17 @@ class Calculator {
             this.operation = operation;
             this.previousOperand = this.currentOperand;
             this.readyForNewInput = false;
-            this.waitingForSecondOperand = true; // Đặt cờ mới
+            this.waitingForSecondOperand = true;
             this.updateDisplay();
             return;
         }
 
         this.readyForNewInput = false;
 
-        // Xử lý toán tử một ngôi
+        // Xử lý các phép toán một ngôi (√x, x², etc.)
         if (["%", "1/x", "x²", "√x"].includes(operation)) {
-            // (Toàn bộ logic xử lý 1 ngôi của bạn giữ nguyên)
             let baseString;
+            // Corner Case: Cho phép nối chuỗi các phép toán một ngôi (vd: √ (sqr(5))).
             if (this.operation === "UNARY_DISPLAY") {
                 baseString = this.previousOperand;
             } else {
@@ -163,33 +178,32 @@ class Calculator {
             return;
         }
 
-        // Xử lý toán tử 2 ngôi
+        // Reset bộ nhớ toán tử một ngôi khi chuyển sang toán tử hai ngôi.
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
 
-        // Cho phép đổi '5 +' thành '5 -'
+        // Corner Case: Cho phép thay đổi phép toán (vd: từ "5 +" thành "5 -").
         if (this.currentOperand === "" && this.previousOperand !== "") {
             this.operation = operation;
             this.updateDisplay();
             return;
         }
 
-        // Tính toán chuỗi (5 + 2 +)
+        // Corner Case: Thực hiện tính toán chuỗi (vd: "5 + 2 +").
         if (this.previousOperand !== "") {
-            this.compute(); // Không truyền 'true'
+            this.compute();
         }
 
-        // Gán phép toán lần đầu (5 +)
         if (this.currentOperand === "" && this.previousOperand === "") return;
 
         this.operation = operation;
         this.previousOperand = this.currentOperand;
-        // --- THAY ĐỔI CHÍNH ---
-        // Xóa: this.currentOperand = '';
-        this.waitingForSecondOperand = true; // <-- THAY BẰNG DÒNG NÀY
+        this.waitingForSecondOperand = true;
     }
 
-    // Đổi dấu dương/âm
+    /**
+     * Đổi dấu (dương/âm) của số hiện tại.
+     */
     negate() {
         this.waitingForSecondOperand = false;
         this.readyForNewInput = false;
@@ -200,11 +214,14 @@ class Calculator {
         this.currentOperand = parseFloat(this.currentOperand) * -1;
     }
 
-    // THAY THẾ TOÀN BỘ HÀM NÀY
+    /**
+     * Thêm một mục mới vào bảng lịch sử.
+     * @param {string} prevOpString Chuỗi phép tính (vd: "2 + 5 =").
+     * @param {string} currentOpString Chuỗi kết quả (vd: "7").
+     */
     addEntryToHistory(prevOpString, currentOpString) {
         if (this.isError) return;
 
-        // 1. Tạo một hàm để xây dựng DOM (để tái sử dụng)
         const createHistoryEntry = () => {
             const historyEntry = document.createElement("div");
             historyEntry.classList.add("history-entry");
@@ -222,25 +239,23 @@ class Calculator {
             return historyEntry;
         };
 
-        // 2. Tạo và thêm vào Mobile
         this.historyMobile.prepend(createHistoryEntry());
-
-        // 3. Tạo và thêm vào Desktop
         this.historyDesktop.prepend(createHistoryEntry());
     }
 
-    // CẬP NHẬT: Sửa lỗi lưu lịch sử
+    /**
+     * Thực hiện phép tính hai ngôi hoặc hoàn tất một phép tính một ngôi.
+     * @param {boolean} calledByEquals Cho biết hàm có được gọi bởi nút '=' hay không.
+     */
     compute(calledByEquals = false) {
         this.waitingForSecondOperand = false;
-        // Xử lý trường hợp '9, sqrt, ='
+        // Corner Case: Hoàn tất và lưu lịch sử cho một chuỗi phép toán một ngôi (vd: "√(9) =").
         if (this.operation === "UNARY_DISPLAY" && calledByEquals) {
             this.previousOperand = `${this.previousOperand} =`;
             this.operation = undefined;
             this.readyForNewInput = true;
             this.unaryOpStack = [];
             this.unaryBackupStack = [];
-
-            // Gọi hàm với giá trị hiện tại
             this.addEntryToHistory(this.previousOperand, this.currentOperand);
             return;
         }
@@ -251,6 +266,7 @@ class Calculator {
         let computation;
         const prev = parseFloat(this.previousOperand);
         const op = this.operation;
+        // Corner Case: Xử lý khi nhấn "=" mà không có toán hạng thứ hai (vd: "5 + =" sẽ thành "5 + 5").
         const currentVal = isNaN(parseFloat(this.currentOperand))
             ? prev
             : parseFloat(this.currentOperand);
@@ -268,6 +284,7 @@ class Calculator {
                 computation = prev * currentVal;
                 break;
             case "÷":
+                // Corner Case: Xử lý lỗi chia cho 0.
                 if (currentVal === 0) {
                     computation = "Cannot divide by zero";
                     this.isError = true;
@@ -279,34 +296,28 @@ class Calculator {
                 return;
         }
 
-        // --- THAY ĐỔI CHÍNH ---
-        // Xây dựng chuỗi lịch sử TRƯỚC KHI thay đổi state
         const historyPrevString = `${prev} ${op} ${currentVal} =`;
         const historyCurrentString = computation;
-        // --- KẾT THÚC THAY ĐỔI ---
 
         this.currentOperand = computation;
         this.operation = undefined;
-
         this.readyForNewInput = calledByEquals;
 
-        // --- THAY ĐỔI CHÍNH ---
+        // Phân biệt logic để cập nhật UI và lưu lịch sử.
         if (calledByEquals) {
-            // Nếu nhấn '=', cập nhật màn hình và lưu lịch sử
+            // Nếu được gọi bởi '=', hiển thị phép tính đầy đủ trên màn hình.
             this.previousOperand = historyPrevString;
             this.addEntryToHistory(historyPrevString, historyCurrentString);
         } else {
-            // Nếu là phép tính ngầm (vd: 5 + 2 +)
-            // CŨNG LƯU LỊCH SỬ
+            // Nếu là phép tính ngầm, chỉ lưu lịch sử mà không thay đổi màn hình.
             this.addEntryToHistory(historyPrevString, historyCurrentString);
-
-            // Không set this.previousOperand,
-            // hàm chooseOperation sẽ làm việc đó (vd: '7')
         }
-        // --- KẾT THÚC THAY ĐỔI ---
     }
 
-    // --- ĐÂY LÀ HÀM SỬA LỖI CHÍNH ---
+    /**
+     * Thực hiện các phép toán một ngôi (√x, x², 1/x, %).
+     * @param {string} operation Ký hiệu của phép toán một ngôi.
+     */
     computeSingleOperand(operation) {
         this.waitingForSecondOperand = false;
         const current = parseFloat(this.currentOperand);
@@ -315,25 +326,27 @@ class Calculator {
 
         const lastOp = this.unaryOpStack.pop();
 
+        // Corner Case: Khắc phục lỗi làm tròn số phẩy động khi thực hiện các phép toán ngược nhau.
+        // Ví dụ: √3 rồi bình phương sẽ trả về chính xác 3.
         if (operation === "x²" && lastOp === "√x") {
             result = this.unaryBackupStack.pop();
         } else if (operation === "√x" && lastOp === "x²") {
             result = this.unaryBackupStack.pop();
         } else {
+            // Luồng bình thường: lưu lại trạng thái để có thể hoàn tác ở lần sau.
             if (lastOp) this.unaryOpStack.push(lastOp);
-
             this.unaryBackupStack.push(current);
             this.unaryOpStack.push(operation);
 
-            // --- THAY ĐỔI CHÍNH Ở ĐÂY ---
             switch (operation) {
                 case "%":
                     result = current / 100;
                     break;
                 case "1/x":
+                    // Corner Case: Xử lý lỗi chia cho 0.
                     if (current === 0) {
                         result = "Cannot divide by zero";
-                        this.isError = true; // Đặt cờ lỗi
+                        this.isError = true;
                     } else {
                         result = 1 / current;
                     }
@@ -342,9 +355,10 @@ class Calculator {
                     result = Math.pow(current, 2);
                     break;
                 case "√x":
+                    // Corner Case: Xử lý lỗi căn bậc hai của số âm.
                     if (current < 0) {
                         result = "Invalid input";
-                        this.isError = true; // Đặt cờ lỗi
+                        this.isError = true;
                     } else {
                         result = Math.sqrt(current);
                     }
@@ -352,35 +366,30 @@ class Calculator {
                 default:
                     return;
             }
-            // --- KẾT THÚC THAY ĐỔI ---
         }
-
         this.currentOperand = result;
         this.readyForNewInput = true;
     }
-    // --- KẾT THÚC THAY ĐỔI ---
 
-    // Cập nhật màn hình hiển thị
-    // Cập nhật màn hình hiển thị (ĐÃ THAY THẾ)
+    /**
+     * Cập nhật giao diện (DOM) dựa trên trạng thái hiện tại của máy tính.
+     */
     updateDisplay() {
-        // --- Logic cho SỐ LỚN (Current Operand) ---
         this.currentOperandTextElement.innerText = this.currentOperand;
         const displayElement = this.currentOperandTextElement;
-        const defaultFontSizeCurrent = 2.1;
+        const defaultFontSizeCurrent = 3.5;
         displayElement.style.fontSize = `${defaultFontSizeCurrent}rem`;
+        // Logic tự động co nhỏ font chữ nếu số quá dài.
+        if (displayElement.scrollWidth > displayElement.clientWidth) {
+            let newFontSize =
+                (displayElement.clientWidth / displayElement.scrollWidth) *
+                defaultFontSizeCurrent;
+            newFontSize = Math.max(newFontSize, 1.5);
+            displayElement.style.fontSize = `${newFontSize}rem`;
+        }
 
-        // if (displayElement.scrollWidth > displayElement.clientWidth) {
-        //     let newFontSize =
-        //         (displayElement.clientWidth / displayElement.scrollWidth) * 3.5;
-        //     newFontSize = Math.max(newFontSize, 1.5);
-        //     console.log(newFontSize);
-        //     displayElement.style.fontSize = `${newFontSize}rem`;
-        // }
-
-        // --- Logic cho DÒNG LỊCH SỬ (Previous Operand) ---
-
-        // 1. Gán text cho dòng lịch sử
         if (this.operation != null) {
+            // Xử lý hiển thị cho các chuỗi phép toán một ngôi.
             if (this.operation === "UNARY_DISPLAY") {
                 this.previousOperandTextElement.innerText =
                     this.previousOperand;
@@ -391,24 +400,24 @@ class Calculator {
             this.previousOperandTextElement.innerText = this.previousOperand;
         }
 
-        // 2. THAY THẾ: Logic hiển thị/ẩn nút cuộn
         const prevDisplayElement = this.previousOperandTextElement;
-        // Reset font-size về mặc định (phòng trường hợp cũ)
-        prevDisplayElement.style.fontSize = "1.5rem";
+        const defaultFontSizePrev = 1.5;
+        prevDisplayElement.style.fontSize = `${defaultFontSizePrev}rem`;
 
+        // Logic tự động co nhỏ font chữ cho dòng lịch sử nếu quá dài.
         if (prevDisplayElement.scrollWidth > prevDisplayElement.clientWidth) {
-            // Nếu bị tràn, hiện các nút
-            this.historyContainer.classList.add("overflowing");
-            // Tự động cuộn sang phải cùng để xem nội dung mới nhất
-            prevDisplayElement.scrollLeft = prevDisplayElement.scrollWidth;
-        } else {
-            // Nếu không, ẩn đi
-            this.historyContainer.classList.remove("overflowing");
+            let newFontSize =
+                (prevDisplayElement.clientWidth /
+                    prevDisplayElement.scrollWidth) *
+                defaultFontSizePrev;
+            newFontSize = Math.max(newFontSize, 0.8);
+            prevDisplayElement.style.fontSize = `${newFontSize}rem`;
         }
     }
 }
 
-// --- Kết nối DOM và gán sự kiện (Không thay đổi) ---
+// --- KHỞI TẠO VÀ GÁN SỰ KIỆN ---
+
 const numberButtons = document.querySelectorAll("[data-number]");
 const operationButtons = document.querySelectorAll("[data-operation]");
 const equalsButton = document.querySelector("[data-equals]");
@@ -422,29 +431,24 @@ const previousOperandTextElement = document.querySelector(
 const currentOperandTextElement = document.querySelector(
     "[data-current-operand]"
 );
-
-// Scroll btn
 const historyContainer = document.querySelector(".history-container");
 const scrollLeftButton = document.querySelector("#scroll-left");
 const scrollRightButton = document.querySelector("#scroll-right");
-// 1. Chọn các phần tử cần thiết
 const themeToggleButton = document.querySelector("#theme-toggle");
-// Chọn đúng thẻ <img> bên trong nút
 const themeIcon = document.querySelector("#theme-icon");
 const bodyElement = document.body;
-// 1. Chọn các phần tử
 const historyToggleButton = document.querySelector("#history-toggle");
 const historyOverlayMobile = document.querySelector("#history-overlay-mobile");
 const historyOverlayDesktop = document.querySelector(
     "#history-overlay-desktop"
 );
-const backdropOverlay = document.querySelector("#backdrop-overlay"); // Thêm backdrop
+const backdropOverlay = document.querySelector("#backdrop-overlay");
 
 const calculator = new Calculator(
     previousOperandTextElement,
     currentOperandTextElement,
     historyContainer,
-    historyOverlayMobile, // <-- Phải khớp với tên biến ở trên
+    historyOverlayMobile,
     historyOverlayDesktop
 );
 calculator.updateDisplay();
@@ -463,63 +467,56 @@ operationButtons.forEach((button) => {
     });
 });
 
-// Thay đổi dòng này:
-equalsButton.addEventListener("click", (button) => {
-    calculator.compute(true); // <--- THÊM 'true' VÀO ĐÂY
+equalsButton.addEventListener("click", () => {
+    calculator.compute(true);
+
     calculator.updateDisplay();
 });
 
-clearButton.addEventListener("click", (button) => {
+clearButton.addEventListener("click", () => {
     calculator.clear();
-    calculator.updateDisplay();
 });
 
-clearEntryButton.addEventListener("click", (button) => {
+clearEntryButton.addEventListener("click", () => {
     calculator.clearEntry();
 });
 
-backspaceButton.addEventListener("click", (button) => {
+backspaceButton.addEventListener("click", () => {
     calculator.backspace();
     calculator.updateDisplay();
 });
 
-negateButton.addEventListener("click", (button) => {
+negateButton.addEventListener("click", () => {
     calculator.negate();
     calculator.updateDisplay();
 });
 
 scrollLeftButton.addEventListener("click", () => {
-    previousOperandTextElement.scrollLeft -= 75; // Cuộn 75px
+    previousOperandTextElement.scrollLeft -= 75;
 });
 
 scrollRightButton.addEventListener("click", () => {
-    previousOperandTextElement.scrollLeft += 75; // Cuộn 75px
+    previousOperandTextElement.scrollLeft += 75;
 });
 
-// --- CẬP NHẬT: HỖ TRỢ BÀN PHÍM (Đã sửa lỗi Zoom) ---
 window.addEventListener("keydown", function (event) {
-    // --- BẮT ĐẦU SỬA LỖI ---
-    // Nếu phím Ctrl (Windows/Linux) hoặc Meta (Mac/Cmd) đang được nhấn,
-    // chúng ta "return" (bỏ qua) ngay lập tức.
-    // Điều này cho phép trình duyệt xử lý các phím tắt của nó (như Ctrl + -, Ctrl + +).
+    // Corner Case: Bỏ qua nếu người dùng đang dùng phím tắt của trình duyệt (Ctrl + -, Ctrl + +).
     if (event.ctrlKey || event.metaKey) {
         return;
     }
-    // --- KẾT THÚC SỬA LỖI ---
-
     const key = event.key;
-    let handled = true; // Cờ để theo dõi phím đã được xử lý
+    let handled = true;
 
     if ((key >= "0" && key <= "9") || key === ".") {
         calculator.appendNumber(key);
     } else if (key === "+") {
         calculator.chooseOperation("+");
     } else if (key === "-") {
-        calculator.chooseOperation("−"); // Sử dụng ký tự '−' (dài)
+        calculator.chooseOperation("−");
     } else if (key === "*") {
-        calculator.chooseOperation("×"); // Sử dụng ký tự '×'
+        calculator.chooseOperation("×");
     } else if (key === "/") {
-        calculator.chooseOperation("÷"); // Sử dụng ký tự '÷'
+        calculator.chooseOperation("÷");
     } else if (key === "%") {
         calculator.chooseOperation("%");
     } else if (key === "Enter" || key === "=") {
@@ -531,67 +528,42 @@ window.addEventListener("keydown", function (event) {
     } else if (key === "Delete") {
         calculator.clearEntry();
     } else {
-        handled = false; // Phím này không được xử lý
+        handled = false;
     }
 
     if (handled) {
-        // Chỉ ngăn chặn hành vi mặc định NẾU đó là phím chúng ta xử lý
         event.preventDefault();
-
-        // Cập nhật màn hình sau khi nhấn phím
         calculator.updateDisplay();
     }
 });
 
-// --- CẬP NHẬT: LOGIC TOGGLE THEME VỚI SVG ---
-
-// 2. Định nghĩa đường dẫn tới icon của bạn
-const iconPath = "assets/icons/"; // (Hoặc đường dẫn của bạn)
+const iconPath = "assets/icons/";
 const sunIcon = `${iconPath}sun.svg`;
 const moonIcon = `${iconPath}moon.svg`;
 
-// 3. Gán sự kiện click
 themeToggleButton.addEventListener("click", () => {
-    // 4. Toggle class 'dark-mode' trên <body>
     bodyElement.classList.toggle("dark-mode");
-
-    // 5. Đổi 'src' của <img>
     if (bodyElement.classList.contains("dark-mode")) {
-        themeIcon.src = sunIcon; // Dark mode -> hiện icon mặt trời
+        themeIcon.src = sunIcon;
     } else {
-        themeIcon.src = moonIcon; // Light mode -> hiện icon mặt trăng
+        themeIcon.src = moonIcon;
     }
 });
 
-// --- CẬP NHẬT: LOGIC TOGGLE HISTORY OVERLAY ---
-
-// 2. Gán sự kiện click cho nút Lịch sử
 historyToggleButton.addEventListener("click", () => {
-    historyOverlayMobile.classList.toggle("show"); // <-- Sửa
-    backdropOverlay.classList.toggle("show"); // Cũng toggle backdrop
+    historyOverlayMobile.classList.toggle("show");
+    backdropOverlay.classList.toggle("show");
 });
 
-// 3. THÊM MỚI: Gán sự kiện click cho backdrop
 backdropOverlay.addEventListener("click", () => {
-    // Dùng 'remove' để chắc chắn là đóng lại
-    historyOverlayMobile.classList.remove("show"); //
+    historyOverlayMobile.classList.remove("show");
     backdropOverlay.classList.remove("show");
 });
 
-// --- CẬP NHẬT: Đóng khi click bên ngoài ---
 window.addEventListener("click", (event) => {
-    // 1. Kiểm tra xem overlay có đang mở không
     const isOverlayOpen = historyOverlayMobile.classList.contains("show");
-
-    // 2. Kiểm tra xem click có phải là nút toggle KHÔNG
-    const clickedOnToggle = event.target.closest("#history-toggle");
-
-    // 3. Kiểm tra xem click có nằm BÊN TRONG overlay KHÔNG
-    const clickedInsideOverlay = event.target.closest("#history-overlay");
-
-    // 4. Nếu overlay đang mở VÀ click KHÔNG PHẢI nút toggle VÀ KHÔNG PHẢI overlay
-    if (isOverlayOpen && !clickedOnToggle && !clickedInsideOverlay) {
-        // Đóng nó lại
+    const clickedInsideCalculator = event.target.closest(".calculator");
+    if (isOverlayOpen && !clickedInsideCalculator) {
         historyOverlayMobile.classList.remove("show");
         backdropOverlay.classList.remove("show");
     }

@@ -1,33 +1,105 @@
-/* --- THÊM MỚI: DESKTOP RESPONSIVE --- */
+/* --- DESKTOP RESPONSIVE (Thay đổi lớn) --- */
 @media (min-width: 900px) {
-    /* 1. Thay đổi layout chính */
-    .app-container {
-        display: flex;
-        justify-content: center;
-        align-items: flex-start; /* Căn lên trên */
-        gap: 24px;
-        padding: 20px;
+    body {
+        display: block;
     }
 
-    /* 2. Style cho History Sidebar */
-    #history-overlay {
-        /* Ghi đè toàn bộ style 'fixed' của mobile */
+    .app-container {
+        display: flex;
+        justify-content: flex-start;
+        width: 100%;
+        height: 100vh;
+        padding: 0;
+    }
+
+    .calculator {
+        position: static;
+        overflow: visible;
+
+        max-width: none;
+        flex-grow: 1;
+        flex-basis: 0;
+        height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 20px 40px;
+    }
+
+    .grid-container {
+        height: 100%;
+    }
+
+    /* Ẩn các thứ của Mobile */
+    #history-toggle,
+    #backdrop-overlay,
+    #history-overlay-mobile {
+        display: none !important;
+    }
+
+    /* Hiện History Desktop */
+    #history-overlay-desktop {
+        display: block; /* Hiện nó lên */
         position: static;
         transform: none;
         visibility: visible;
         opacity: 1;
-        box-shadow: var(--shadow-calculator);
+        box-shadow: none;
 
-        /* Kích thước mới */
-        flex-basis: 300px; /* Chiều rộng cố định */
+        flex-basis: 350px;
         flex-shrink: 0;
-        height: 600px; /* Chiều cao cố định (tùy chỉnh) */
+        height: 100vh;
 
-        /* Bo góc lại cho đẹp */
-        border-radius: 10px;
+        border-radius: 0;
+        border-left: 1px solid var(--border-button);
+        background-color: var(--bg-overlay);
+        padding: 20px;
+        overflow-y: auto;
     }
 
-    /* 3. Hiển thị lại tiêu đề h2 */
+    /* Style tiêu đề cho Desktop */
+    #history-overlay-desktop h2 {
+        display: block;
+        color: var(--text-overlay-header);
+        margin-top: 0;
+        border-bottom: 1px solid var(--border-button);
+        padding-bottom: 10px;
+    }
+
+    /* 1. Tăng kích thước font cho "Calculator" */
+    .calculator-header {
+        font-size: 2.5rem; /* Tăng từ 1rem */
+        font-weight: 600;
+        height: auto; /* Bỏ chiều cao cố định */
+        padding-top: 10px; /* Thêm chút đệm */
+    }
+
+    /* 2. Căn chỉnh lại container chứa các nút */
+    .toggle-container {
+        padding-top: 15px;
+        padding-bottom: 20px; /* Thêm khoảng cách trước khi tới display */
+    }
+
+    /* 3. Tăng kích thước cho các icon (theme và history) */
+    #theme-toggle img,
+    #history-toggle img {
+        width: 32px; /* Tăng từ 24px */
+        height: 32px;
+    }
+
+    #history-overlay {
+        position: static;
+        transform: none;
+        visibility: visible;
+        opacity: 1;
+        box-shadow: none;
+        flex-basis: 350px;
+        flex-shrink: 0;
+        height: 100%;
+        border-radius: 0;
+        border-left: 1px solid var(--border-button);
+        background-color: var(--bg-overlay);
+    }
+
     #history-overlay h2 {
         display: block;
         color: var(--text-overlay-header);
@@ -36,9 +108,8 @@
         padding-bottom: 10px;
     }
 
-    /* 4. Ẩn các nút không cần thiết trên desktop */
     #history-toggle,
     #backdrop-overlay {
-        display: none !important; /* Dùng !important để đảm bảo ẩn */
+        display: none !important;
     }
 }
