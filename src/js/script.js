@@ -251,6 +251,42 @@ class Calculator {
      * @param {boolean} calledByEquals Cho biết hàm có được gọi bởi nút '=' hay không.
      */
     compute(calledByEquals = false) {
+        // Corner Case: Xử lý khi nhấn "=" liên tiếp (vd: 5 + 2 = = = ...)
+        if (
+            calledByEquals &&
+            this.operation === undefined &&
+            this.lastRepeatedOperation
+        ) {
+            const prev = parseFloat(this.currentOperand);
+            const op = this.lastRepeatedOperation;
+            const currentVal = this.lastRepeatedOperand;
+            let computation;
+
+            switch (op) {
+                case "+":
+                    computation = prev + currentVal;
+                    break;
+                case "−":
+                    computation = prev - currentVal;
+                    break;
+                case "×":
+                    computation = prev * currentVal;
+                    break;
+                case "÷":
+                    computation = prev / currentVal;
+                    break;
+                default:
+                    return;
+            }
+
+            const historyPrevString = `${prev} ${op} ${currentVal} =`;
+            this.currentOperand = computation;
+            this.previousOperand = historyPrevString;
+            this.addEntryToHistory(historyPrevString, computation);
+            this.updateDisplay();
+            return; // Dừng lại sau khi xử lý
+        }
+
         this.waitingForSecondOperand = false;
         // Corner Case: Hoàn tất và lưu lịch sử cho một chuỗi phép toán một ngôi (vd: "√(9) =").
         if (this.operation === "UNARY_DISPLAY" && calledByEquals) {
@@ -274,7 +310,10 @@ class Calculator {
             ? prev
             : parseFloat(this.currentOperand);
 
-        if (isNaN(prev) || isNaN(currentVal)) return;
+        if (isNaN(prev) || (isNaN(op) && isNaN(currentVal))) return;
+
+        this.lastRepeatedOperation = op;
+        this.lastRepeatedOperand = currentVal;
 
         switch (op) {
             case "+":
@@ -306,13 +345,10 @@ class Calculator {
         this.operation = undefined;
         this.readyForNewInput = calledByEquals;
 
-        // Phân biệt logic để cập nhật UI và lưu lịch sử.
         if (calledByEquals) {
-            // Nếu được gọi bởi '=', hiển thị phép tính đầy đủ trên màn hình.
             this.previousOperand = historyPrevString;
             this.addEntryToHistory(historyPrevString, historyCurrentString);
         } else {
-            // Nếu là phép tính ngầm, chỉ lưu lịch sử mà không thay đổi màn hình.
             this.addEntryToHistory(historyPrevString, historyCurrentString);
         }
     }
@@ -378,11 +414,11 @@ class Calculator {
      * Cập nhật giao diện (DOM) dựa trên trạng thái hiện tại của máy tính.
      */
     updateDisplay() {
+        // --- Logic cho SỐ LỚN (Current Operand) -
         this.currentOperandTextElement.innerText = this.currentOperand;
         const displayElement = this.currentOperandTextElement;
         const defaultFontSizeCurrent = 3.5;
         displayElement.style.fontSize = `${defaultFontSizeCurrent}rem`;
-        // Logic tự động co nhỏ font chữ nếu số quá dài.
         if (displayElement.scrollWidth > displayElement.clientWidth) {
             let newFontSize =
                 (displayElement.clientWidth / displayElement.scrollWidth) *
@@ -391,8 +427,8 @@ class Calculator {
             displayElement.style.fontSize = `${newFontSize}rem`;
         }
 
+        // 1. Gán text cho dòng lịch sử (previous operand)
         if (this.operation != null) {
-            // Xử lý hiển thị cho các chuỗi phép toán một ngôi.
             if (this.operation === "UNARY_DISPLAY") {
                 this.previousOperandTextElement.innerText =
                     this.previousOperand;
@@ -403,18 +439,16 @@ class Calculator {
             this.previousOperandTextElement.innerText = this.previousOperand;
         }
 
+        // 2. THAY THẾ: Logic hiển thị/ẩn nút cuộn
         const prevDisplayElement = this.previousOperandTextElement;
-        const defaultFontSizePrev = 1.5;
-        prevDisplayElement.style.fontSize = `${defaultFontSizePrev}rem`;
+        prevDisplayElement.style.fontSize = "1.5rem";
 
-        // Logic tự động co nhỏ font chữ cho dòng lịch sử nếu quá dài.
         if (prevDisplayElement.scrollWidth > prevDisplayElement.clientWidth) {
-            let newFontSize =
-                (prevDisplayElement.clientWidth /
-                    prevDisplayElement.scrollWidth) *
-                defaultFontSizePrev;
-            newFontSize = Math.max(newFontSize, 0.8);
-            prevDisplayElement.style.fontSize = `${newFontSize}rem`;
+            this.historyContainer.classList.add("overflowing");
+
+            prevDisplayElement.scrollLeft = prevDisplayElement.scrollWidth;
+        } else {
+            this.historyContainer.classList.remove("overflowing");
         }
     }
 }
