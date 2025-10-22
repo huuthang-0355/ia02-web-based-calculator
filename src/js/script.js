@@ -87,8 +87,8 @@ class Calculator {
         if (this.isError) {
             this.clearEntry();
         }
-        // Corner Case: Ngăn người dùng nhập nhiều hơn một dấu chấm.
-        if (number === "." && this.currentOperand.includes(".")) return;
+
+        // [SỬA LỖI] Logic kiểm tra dấu chấm đã được di chuyển xuống dưới
 
         // Corner Case: Sau khi nhập "5 +", nhấn số "2" sẽ thay thế số "5" ở dòng dưới.
         if (this.waitingForSecondOperand) {
@@ -98,6 +98,7 @@ class Calculator {
                 this.currentOperand = number.toString();
             }
             this.waitingForSecondOperand = false;
+
             // Corner Case: Sau khi nhấn "=", nhấn số mới sẽ bắt đầu một phép tính mới.
         } else if (this.readyForNewInput) {
             this.previousOperand = "";
@@ -108,16 +109,22 @@ class Calculator {
                 this.currentOperand = number.toString();
             }
             this.readyForNewInput = false;
+
             // Luồng hoạt động bình thường: nối số vào chuỗi hiện tại.
         } else {
+            if (number === "." && this.currentOperand.toString().includes("."))
+                return;
+
             // Corner Case: Xóa số 0 mặc định ở đầu.
             if (this.currentOperand === "0" && number !== ".") {
                 this.currentOperand = number.toString();
             } else {
+                // Thêm .toString() để đảm bảo an toàn khi nối chuỗi
                 this.currentOperand =
                     this.currentOperand.toString() + number.toString();
             }
         }
+
         // Reset bộ nhớ toán tử một ngôi mỗi khi nhập số mới.
         this.unaryOpStack = [];
         this.unaryBackupStack = [];
@@ -146,20 +153,29 @@ class Calculator {
         }
 
         // Corner Case: Cho phép thay đổi phép toán (vd: từ "9 +" thành "9 -").
-        // Nếu đang chờ toán hạng thứ 2 và người dùng nhấn một toán tử 2 ngôi khác
         if (
             this.waitingForSecondOperand &&
-            !["%", "1/x", "x²", "√x"].includes(operation)
+            !["%", "1.x", "x²", "√x"].includes(operation)
         ) {
-            this.operation = operation; // Chỉ thay đổi phép toán
+            this.operation = operation;
             this.updateDisplay();
-            return; // Dừng lại, không chạy code bên dưới
+            return;
         }
 
         this.readyForNewInput = false;
 
         // Xử lý các phép toán một ngôi (√x, x², etc.)
         if (["%", "1/x", "x²", "√x"].includes(operation)) {
+            // KIỂM TRA: Nếu đang có phép toán 2 ngôi chờ (vd: "25 +"),
+            // thì chỉ tính toán số hiện tại (9 -> 3) và KHÔNG thay đổi phép toán "+".
+            if (this.operation && this.operation !== "UNARY_DISPLAY") {
+                this.computeSingleOperand(operation);
+                // (Hàm này sẽ tự động cập nhật currentOperand và readyForNewInput)
+                return;
+            }
+
+            // Luồng bình thường: Nếu không có phép toán 2 ngôi nào,
+            // thì mới tạo chuỗi hiển thị UNARY_DISPLAY.
             let baseString;
             if (this.operation === "UNARY_DISPLAY") {
                 baseString = this.previousOperand;
@@ -192,7 +208,6 @@ class Calculator {
         this.unaryBackupStack = [];
 
         // Corner Case: Thực hiện tính toán chuỗi (vd: "5 + 2 +").
-        // Logic này chỉ nên chạy khi KHÔNG chờ toán hạng thứ hai.
         if (this.previousOperand !== "") {
             this.compute();
         }
